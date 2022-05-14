@@ -33,6 +33,26 @@ df.STR.upper()
 ```
 
 ```python
+df.STR[1:6]
+```
+```
+     iata   name   city state country
+0      0M  higpe  ay Sp     S      SA
+1      0R  iving  iving     X      SA
+2      0V  eadow  olora     O      SA
+3      1G  erry-   erry     Y      SA
+4      1J  illia  illia     L      SA
+...   ...    ...    ...   ...     ...
+3371   EF  lkin    lkin     C      SA
+3372   ER  chuyl  ottsv     A      SA
+3373   PH  ephyr  ephyr     L      SA
+3374   UN  lack     uni     M      SA
+3375   ZV  anesv  anesv     H      SA
+
+[3376 rows x 5 columns]
+```
+
+```python
 df.STR.cat(df.city, sep='-')
 ```
 ```

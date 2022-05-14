@@ -33,10 +33,13 @@ class StringAccessor:
         if _validate and isinstance(self._obj, pandas.DataFrame):
             [pandas.Series.str._validate(self._obj[col]) for col in self._obj.columns]
 
-    def __getitem__(self, idx: int):
+    def __getitem__(self, key: typing.Union[int, slice]):
         '''[Called to implement evaluation of `self[key]`](https://docs.python.org/3/reference/datamodel.html#object.__getitem__)'''
         # [Indexing with .str](https://pandas.pydata.org/pandas-docs/stable/user_guide/text.html#indexing-with-str)
-        return self.get(idx)
+        if isinstance(key, slice):
+            return self.slice(start=key.start, stop=key.stop, step=key.step)
+        elif isinstance(key, int):
+            return self.get(key)
 
     def _apply(self, _applyMethod: str = '_applyLambda', **kwargs) -> typing.Union[pandas.Index, pandas.Series, pandas.DataFrame]:
         '''Execute `pandas.Series.str.{self._method}` (where `self._method` corresponds to the name of the parent function) on an arbitratry `pandas` object'''

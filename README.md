@@ -127,8 +127,8 @@ df.STR.split(expand=True)
 data = [df.name[i*6:(i+1)*(6)].tolist() for i in range(30)]
 idx = pandas.MultiIndex.from_product((['A','B','C'], ['foo','bar'], ['one','two','three','four','five']))
 cols = pandas.MultiIndex.from_product((['foo','bar','baz'], ['one','two']))
-df = pandas.DataFrame(data=data, index=idx, columns=cols)
-df.STR.split('-', expand=True)
+DF = pandas.DataFrame(data=data, index=idx, columns=cols)
+DF.STR.split('-', expand=True)
 ```
 ```
                                      foo                                                                                                bar                                                                           baz

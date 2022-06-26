@@ -1,6 +1,6 @@
 # pd_df_str
 
-Extends `pandas.Series.str` methods so that they can be applied to `pandas.DataFrame` objects by registering custom a accessor.
+Extends `pandas.Series.str` methods so that they can be applied to `pandas.DataFrame` objects by registering a custom accessor.
 For simple `pandas.Series.str` methods (i.e. methods that return a `pandas.Series` when given a `pandas.Series` as input), the method is called across all columns via `pandas.DataFrame.apply`.
 For complex `pandas.Series.str` methods (i.e. methods that return a `pandas.DataFrame` when given a `pandas.Series` as input), the method is called across all columns and the resulting objects are concatenated together into an output `pandas.DataFrame`.
 MultiIndexed `pandas.DataFrame` objects are supported.
@@ -9,7 +9,7 @@ MultiIndexed `pandas.DataFrame` objects are supported.
 ```python
 import pandas
 import pd_df_str
-df = pandas.read_csv('https://raw.githubusercontent.com/vega/vega-datasets/next/data/airports.csv')[['iata','name','city','state','country']]
+df = pandas.read_csv('https://raw.githubusercontent.com/vega/vega-datasets/next/data/airports.csv').drop(columns=['latitude','longitude'])
 ```
 
 ```python

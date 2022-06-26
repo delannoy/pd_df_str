@@ -85,7 +85,7 @@ class Generate:
     @staticmethod
     def airports(mixedType: bool = False) -> pandas.DataFrame:
         df = pandas.read_csv('https://raw.githubusercontent.com/vega/vega-datasets/next/data/airports.csv')
-        return df if mixedType else df[['iata','name','city','state','country']]
+        return df if mixedType else df.drop(columns=['latitude','longitude'])
 
     @staticmethod
     def randomString(nChar: int) -> str:

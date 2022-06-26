@@ -2,6 +2,7 @@
 
 import dataclasses
 import inspect
+import logging
 import math
 import random
 import string
@@ -11,53 +12,72 @@ import pandas
 
 import pd_df_str
 
+logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
+
+def timer(func: typing.Callable = None) -> typing.Callable:
+    '''Timer decorator. Logs execution time for functions.''' # [Primer on Python Decorators](https://realpython.com/primer-on-python-decorators/)
+    import functools
+    import timeit
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        t0 = timeit.default_timer()
+        value = func(*args, **kwargs)
+        t1 = timeit.default_timer()
+        logging.info(f'[{t1-t0:.6f} sec] {func.__module__}.{func.__name__}()')
+        return value
+    return wrapper
+
 
 @dataclasses.dataclass
 class Benchmark:
     # [Faster string processing in Pandas](https://www.gresearch.co.uk/article/faster-string-processing-in-pandas/)
 
+    df: pandas.DataFrame = None
+    args: typing.Dict = dataclasses.field(default_factory=list)
+    kwargs: typing.Dict = dataclasses.field(default_factory=dict)
+    method: str = 'center'
+
     @staticmethod
+    @timer
     def testDF(shape: typing.Tuple[int] = ((500,100,10), (2,2,2)), nCharVal: int = 10, nCharIdx: int = 20) -> pandas.DataFrame:
-        print(f'generating random `pandas.DataFrame` with {math.prod(shape[0])} rows and {math.prod(shape[1])} columns...')
         return Generate.multiIndexDF(rowShape=shape[0], colShape=shape[1], nCharVal=nCharVal, nCharIdx=nCharIdx)
 
-    @staticmethod
-    def applyLambda(df: pandas.DataFrame, method: str, *args, **kwargs) -> pandas.DataFrame:
-        print(f'df.apply(lambda col: col.str.{method}({args}, {kwargs}))')
-        return df.STR._applyLambda(df, method, *args, **kwargs)
+    @timer
+    def apply(self, *args, **kwargs) -> pandas.DataFrame:
+        return self.df.STR._apply(*args, **kwargs)
 
-    @staticmethod
-    def applyMap(df: pandas.DataFrame, method: str, *args, **kwargs) -> pandas.DataFrame:
-        print(f'df.applymap(lambda element: str.{method}(element, {args}, {kwargs}))')
-        return df.STR._applyMap(df, method, *args, **kwargs)
+    @timer
+    def applymap(self, *args, **kwargs) -> pandas.DataFrame:
+        return self.df.STR._applymap(*args, **kwargs)
 
-    @staticmethod
-    def applyNumpyChar(df: pandas.DataFrame, method: str, *args, **kwargs) -> pandas.DataFrame:
-        print(f'df.apply(lambda col: numpy.char.{method}(col.to_numpy(), {args}, {kwargs}))')
-        return df.STR._applyNumpyChar(df, method, *args, **kwargs)
+    @timer
+    def npChar(self, *args, **kwargs) -> pandas.DataFrame:
+        return self.df.STR._npChar(*args, **kwargs)
 
-    @staticmethod
-    def concat(df: pandas.DataFrame, method: str, *args, **kwargs) -> pandas.DataFrame:
-        print(f'pandas.concat([df[col].str.{method}({args}, {kwargs}) for col in df])')
-        return df.STR._concat(df, method, *args, **kwargs)
+    @timer
+    def pdConcat(self, *args, **kwargs) -> pandas.DataFrame:
+        return self.df.STR._pdConcat(*args, **kwargs)
 
-    @staticmethod
-    def dictComprehension(df: pandas.DataFrame, method: str, *args, **kwargs) -> pandas.DataFrame:
-        print(f'pandas.DataFrame({{col: df[col].str.{method}({args}, {kwargs}) for col in df}})')
-        return df.STR._dictComprehension(df, method, *args, **kwargs)
+    @timer
+    def dictComprehension(self, *args, **kwargs) -> pandas.DataFrame:
+        return self.df.STR._dictComprehension(*args, **kwargs)
 
-    @staticmethod
-    def stackUnstack(df: pandas.DataFrame, method: str, *args, **kwargs) -> pandas.DataFrame:
-        print(f'col.stack.().str.{method}({args}, {kwargs}).unstack()')
-        return df.STR._stackUnstack(df, method, *args, **kwargs)
+    @timer
+    def stackUnstack(self, *args, **kwargs) -> pandas.DataFrame:
+        return self.df.STR._stackUnstack(*args, **kwargs)
 
-# df = Benchmark.testDF()
-# %timeit Benchmark.applyLambda(df, 'center', 20, '-')
-# %timeit Benchmark.dictComprehension(df, 'center', 20, '-')
-# %timeit Benchmark.applyMap(df, 'center', 20, '-')
-# %timeit Benchmark.applyNumpyChar(df, 'center', 20, '-')
-# %timeit Benchmark.concat(df, 'center', 20, '-')
-# %timeit Benchmark.stackUnstack(df, 'center', 20, '-')
+    def benchmark(self):
+        self.df = self.testDF()
+        self.df.STR._method = self.method
+        self.args = list(Test.kwargs().get(self.method).values())
+        self.kwargs = Test.kwargs().get(self.method)
+        self.apply(**self.kwargs)
+        self.dictComprehension(**self.kwargs)
+        self.applymap(*self.args)
+        self.npChar(**self.kwargs)
+        self.pdConcat(**self.kwargs)
+        self.stackUnstack(**self.kwargs)
+
 
 @dataclasses.dataclass
 class Generate:
@@ -72,19 +92,23 @@ class Generate:
         return str.join('', random.choices(population=string.ascii_letters, k=nChar)) # [How to generate random strings in Python?](https://stackoverflow.com/a/2030293)
 
     @classmethod
-    def df(cls, shape: typing.Tuple[int], nChar: int = 8, **kwargs) -> pandas.DataFrame:
-        return pandas.DataFrame(data=[[cls.randomString(nChar=nChar) for i in range(shape[1])] for j in range(shape[0])], **kwargs)
+    def df(cls, shape: typing.Tuple[int], nChar: int = 10, **kwargs) -> pandas.DataFrame:
+        logging.info(f'generating random `pandas.DataFrame` with {shape[0]} rows and {shape[1]} columns...')
+        data = ((cls.randomString(nChar=nChar) for i in range(shape[1])) for j in range(shape[0]))
+        columns = list(string.ascii_letters)[:shape[1]] if (shape[1] <= len(string.ascii_letters)) else list(cls.randomString(nChar=shape[1]))
+        return pandas.DataFrame(data=data, columns=columns, **kwargs)
 
     @classmethod
     def multiIndex(cls, shape: typing.Tuple[int], nChar: int = 4) -> pandas.MultiIndex:
-        iterables = [[cls.randomString(nChar=nChar) for i in range(len)] for len in shape]
+        iterables = ((cls.randomString(nChar=nChar) for i in range(len)) for len in shape)
         return pandas.MultiIndex.from_product(iterables)
 
     @classmethod
     def multiIndexDF(cls, rowShape: typing.Tuple[int], colShape: typing.Tuple[int], nCharVal: int = 10, nCharIdx: int = 4) -> pandas.DataFrame:
+        logging.info(f'generating random MultiIndex `pandas.DataFrame` with {math.prod(rowShape)} rows and {math.prod(colShape)} columns...')
         rowIndex = cls.multiIndex(shape=rowShape, nChar=nCharIdx) if isinstance(rowShape, tuple) else range(rowShape)
         colIndex = cls.multiIndex(shape=colShape, nChar=nCharIdx) if isinstance(colShape, tuple) else range(colShape)
-        data = [[cls.randomString(nChar=nCharVal) for i,_ in enumerate(colIndex)] for j,_ in enumerate(rowIndex)]
+        data = ((cls.randomString(nChar=nCharVal) for i,_ in enumerate(colIndex)) for j,_ in enumerate(rowIndex))
         return pandas.DataFrame(data=data, index=rowIndex, columns=colIndex)
 
 
@@ -136,7 +160,9 @@ class Test:
     start: int = 0
     step: int = None
     stop: int = None
-    to_strip: str = None # If None then whitespaces are removed
+    testDF: pandas.DataFrame = None
+    testSeries: pandas.DataFrame = None
+    to_strip: str = None # If `None` then whitespaces are removed
     width: int = 12
     wrap_expand_tabs: bool = True
     wrap_replace_whitespace: bool = True
@@ -145,8 +171,12 @@ class Test:
     wrap_break_on_hyphens: bool = True
     KWARGS: dict = dataclasses.field(default_factory=dict)
 
+    def __post_init__(self):
+        self.testDF: pandas.DataFrame = Generate.multiIndexDF(rowShape=(2, 2, 2), colShape=(3, 2, 2, 2), nCharVal=10, nCharIdx=4)
+        self.testSeries: pandas.DataFrame = Generate.df(shape=(40, 2))
+
     @classmethod
-    def pdKwargs(cls, method: str):
+    def pandasKWARGS(cls, method: str):
         methodKwargs = inspect.signature(getattr(pandas.Series.str, method)).parameters
         return {k: v.default if v.default != inspect._empty else None for k,v in methodKwargs.items() if k != 'self'}
 
@@ -211,41 +241,45 @@ class Test:
                       'isdecimal': {},
                       'get_dummies': {'sep': cls.sep}
                       }
-        pdKwargs = {method: cls.pdKwargs(method=method) for method in dir(pandas.Series.str) if not method.startswith('_')}
-        return {**pdKwargs, **cls.KWARGS}
+        pandasKWARGS = {method: cls.pandasKWARGS(method=method) for method in dir(pandas.Series.str) if not method.startswith('_')}
+        return {**pandasKWARGS, **cls.KWARGS}
 
-    @classmethod
-    def dataFrame(cls, df: pandas.DataFrame = Generate.multiIndexDF(rowShape=(2, 2, 2), colShape=(3, 2, 2, 2))):
-        kwargs = cls.kwargs(others=df.iloc[:, 0])
-        for method in dir(pd_df_str.StringAccessor):
+    def dataFrame(self):
+        df = self.testDF
+        kwargs = self.kwargs(others=df.iloc[:, 0])
+        for method in dir(df.STR):
             if not method.startswith('_') and method not in ('index', 'rindex'):
-                print(method)
+                logging.info(method)
+                df.STR._method = method
                 assert isinstance(getattr(df.STR, method)(**kwargs.get(method)), pandas.DataFrame)
 
-    @classmethod
-    def series(cls, df: pandas.DataFrame = Generate.df(shape=(40, 2), columns=['a','b'])):
-        kwargs = cls.kwargs(others=df.iloc[:, 0])
-        for method in dir(pd_df_str.StringAccessor):
+    def series(self):
+        df = self.testSeries
+        kwargs = self.kwargs(others=df.iloc[:, 0])
+        s = df.iloc[:, 0]
+        for method in dir(df.STR):
             if not method.startswith('_') and method not in ('index', 'rindex'):
-                print(method)
-                reference = getattr(df.iloc[:, 0].str, method)(**kwargs.get(method))
+                logging.info(method)
+                s.STR._method = method
+                reference = getattr(s.str, method)(**kwargs.get(method))
                 testMethod = pandas.testing.assert_frame_equal if isinstance(reference, pandas.DataFrame) else pandas.testing.assert_series_equal if isinstance(reference, (pandas.Index, pandas.Series)) else None
-                testMethod(reference, getattr(df.iloc[:, 0].STR, method)(**kwargs.get(method)))
+                testMethod(reference, getattr(s.STR, method)(**kwargs.get(method)))
 
-    @staticmethod
-    def indexMethod(sep: str = '-', df: pandas.DataFrame = Generate.multiIndexDF(rowShape=(2, 2, 2), colShape=(3, 2, 2, 2), nCharVal=10)):
-        print('index')
-        assert (df.STR.join(sep=sep).STR.index(sub=sep) == 1).all().all()
+    def indexMethod(self):
+        df = self.testDF
+        logging.info('index')
+        assert (df.STR.join(sep=self.sep).STR.index(sub=self.sep) == 1).all().all()
         if df.STR.len().all().all():
-            print('rindex')
+            logging.info('rindex')
             strLen = 2 * len(df.iloc[0].iloc[0]) - 2 - 1
-            assert (df.STR.join(sep=sep).STR.rindex(sub=sep) == strLen).all().all()
+            assert (df.STR.join(sep=self.sep).STR.rindex(sub=self.sep) == strLen).all().all()
 
 
 def main():
-    Test.dataFrame()
-    Test.series()
-    Test.indexMethod()
+    test = Test()
+    test.dataFrame()
+    test.series()
+    test.indexMethod()
 
 if __name__ == '__main__':
     main()

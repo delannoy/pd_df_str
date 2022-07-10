@@ -1,0 +1,24 @@
+[build-system]
+requires = ['setuptools']
+build-backend = 'setuptools.build_meta'
+
+[project]
+name = 'pd_df_str'
+version = '1.0.0'
+dependencies = ['pandas >= 0.25.0']
+requires-python = '>=3.7'
+description = 'Extends `pandas.Series.str` methods so that they can be applied to `pandas.DataFrame` objects by registering a custom accessor.'
+readme = 'README.md'
+authors = [{name = 'Andrés G. Delannoy', email = 'andres.delannoy@gmail.com'}]
+license = {file = 'LICENSE'}
+classifiers = [
+    'License :: OSI Approved :: MIT License',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3',
+    'Topic :: Text Processing',
+    'Topic :: Text Processing :: General'
+]
+keywords = ['pandas', 'dataframe', 'str']
+
+[project.urls]
+Homepage = 'https://github.com/delannoy/pd_df_str'

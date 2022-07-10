@@ -23,7 +23,7 @@ def timer(func: typing.Callable = None) -> typing.Callable:
         t0 = timeit.default_timer()
         value = func(*args, **kwargs)
         t1 = timeit.default_timer()
-        logging.info(f'[{t1-t0:.6f} sec] {func.__module__}.{func.__name__}()')
+        logging.info(f'[{t1-t0:.6f} sec] {func.__module__}.{func.__qualname__}()')
         return value
     return wrapper
 
@@ -39,7 +39,7 @@ class Benchmark:
 
     @staticmethod
     @timer
-    def testDF(shape: typing.Tuple[int] = ((500,100,10), (2,2,2)), nCharVal: int = 10, nCharIdx: int = 20) -> pandas.DataFrame:
+    def testDF(shape: typing.Tuple[int] = ((50,100,10), (2,2,2)), nCharVal: int = 10, nCharIdx: int = 20) -> pandas.DataFrame:
         return Generate.multiIndexDF(rowShape=shape[0], colShape=shape[1], nCharVal=nCharVal, nCharIdx=nCharIdx)
 
     @timer

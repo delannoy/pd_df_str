@@ -5,6 +5,11 @@ For simple `pandas.Series.str` methods (i.e. methods that return a `pandas.Serie
 For complex `pandas.Series.str` methods (i.e. methods that return a `pandas.DataFrame` when given a `pandas.Series` as input), the method is called across all columns and the resulting objects are concatenated together into an output `pandas.DataFrame`.
 MultiIndexed `pandas.DataFrame` objects are supported.
 
+## Installation:
+```
+python3 -m pip install pd_df_str
+```
+
 ## Usage:
 ```python
 import pandas

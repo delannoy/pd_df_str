@@ -10,7 +10,7 @@ import typing
 
 import pandas
 
-import pd_df_str
+import pd_df_str.pd_df_str
 
 logging.basicConfig(format='%(levelname)s: %(message)s', level=logging.INFO)
 

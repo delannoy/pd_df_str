@@ -39,7 +39,7 @@ class Benchmark:
 
     @staticmethod
     @timer
-    def testDF(shape: typing.Tuple[int] = ((50,100,10), (2,2,2)), nCharVal: int = 10, nCharIdx: int = 20) -> pandas.DataFrame:
+    def testDF(shape: typing.Tuple[int] = ((500,100,10), (2,2,2)), nCharVal: int = 10, nCharIdx: int = 20) -> pandas.DataFrame:
         return Generate.multiIndexDF(rowShape=shape[0], colShape=shape[1], nCharVal=nCharVal, nCharIdx=nCharIdx)
 
     @timer
